@@ -49,11 +49,11 @@ block() {
     green=${1%[[:xdigit:]][[:xdigit:]]}; green=${green#[[:xdigit:]][[:xdigit:]]}
     blue=${1#[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]}
 
-    red=`printf '%d' 0x${red}`
-    green=`printf '%d' 0x${green}`
-    blue=`printf '%d' 0x${blue}`
+    red=$(printf '%d' 0x${red})
+    green=$(printf '%d' 0x${green})
+    blue=$(printf '%d' 0x${blue})
 
-    printf '\033[48;2;%s;%s;%sm       \033[m   ' $red $green $blue
+    [ "#${1}" = $_7 ] && printf '\033[48;2;%s;%s;%sm       \033[m' $red $green $blue || printf '\033[48;2;%s;%s;%sm       \033[m   ' $red $green $blue
 }
 
 row() {
