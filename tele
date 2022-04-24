@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+#
+# reads file line by line, subtitle style
+# budget teleprompter i wrote 20 min before a spanish presentation xd
 
 main() {
     # needs argument
@@ -18,7 +21,7 @@ main() {
     while read -r line; do
         [ -n "$line" ] && script+=("$line")
     done < "$1"
-        
+
     # first cue
     clear
     [ ${#script[0]} -lt $COLUMNS ] && cprint "${script[0]}" || oprint "${script[0]}"

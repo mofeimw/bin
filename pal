@@ -1,5 +1,9 @@
 #!/bin/sh
+#
+# displays an 8 color palette
+# also copies hex codes to clipboard
 
+# define color scheme
 _0="#0F161A"    # black
 _1="#F9CEC3"    # white
 _2="#15A6B1"    # blue
@@ -18,12 +22,14 @@ main() {
     row
     row
 
+    # read a single keystroke
     while z=$(dd ibs=1 count=1 2>/dev/null); do
         case $z in
             [0-7])
                 printf "\033[2J\033[H"
                 row; row; row
 
+                # pbcopy is macOS specific
                 [ $(uname) = Darwin ] && eval "echo \$_$z | pbcopy"
 
                 [ $z -ne 0 ] && eval "for _ in {0..$((z - 1))}; do printf '          '; done"
@@ -42,13 +48,17 @@ main() {
     done
 }
 
+# print out a single color block
 block() {
+    # remove the leading "#" in the hex code
     set -- ${1#\#}
 
+    # separate the hex code into red, green, and blue values
     red=${1%[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]}
     green=${1%[[:xdigit:]][[:xdigit:]]}; green=${green#[[:xdigit:]][[:xdigit:]]}
     blue=${1#[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]}
 
+    # convert from hex to decimal
     red=$(printf '%d' 0x${red})
     green=$(printf '%d' 0x${green})
     blue=$(printf '%d' 0x${blue})
@@ -56,6 +66,7 @@ block() {
     [ "#${1}" = $_7 ] && printf '\033[48;2;%s;%s;%sm       \033[m' $red $green $blue || printf '\033[48;2;%s;%s;%sm       \033[m   ' $red $green $blue
 }
 
+# print out each of the 8 colors
 row() {
     block $_0
     block $_1
