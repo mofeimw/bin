@@ -14,11 +14,32 @@ main() {
     printf "\033[2J\033[H\033[?25l"
     trap "stty icanon echo; printf '\033[?25h\033[2J\033[H'" EXIT INT
 
-    layer
-    layer
-    layer
+    row
+    row
+    row
 
-    dd ibs=1 count=1 2>/dev/null
+    while z=$(dd ibs=1 count=1 2>/dev/null); do
+        case $z in
+            [0-7])
+                printf "\033[2J\033[H"
+                row; row; row
+
+                [ $(uname) = Darwin ] && eval "echo \$_$z | pbcopy"
+
+                [ $z -ne 0 ] && eval "for _ in {0..$((z - 1))}; do printf '          '; done"
+                eval block \$_$z
+            ;;
+
+            [8-9]) : ;;
+
+            " ")
+                printf '\033[2J\033[H'
+                row; row; row
+            ;;
+
+            *) exit 0;;
+        esac
+    done
 }
 
 block() {
@@ -35,7 +56,7 @@ block() {
     printf '\033[48;2;%s;%s;%sm       \033[m   ' $red $green $blue
 }
 
-layer() {
+row() {
     block $_0
     block $_1
     block $_2
