@@ -5,8 +5,13 @@
 # ask for input file
 # default to index.m3u8
 [ -f index.m3u8 ] && m3u8=index.m3u8 || {
-    echo ".m3u8 file to fetch:"
+    printf ".m3u8 file to fetch: "
     read m3u8
+
+    [ ! -f "$m3u8" ] && {
+        echo "file not found"
+        exit 1
+    }
 }
 
 # make intermediate directory
