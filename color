@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# displays hex color
+
+main() {
+    [ -n "$1" ] && check $1 || check $(pbpaste)
+
+    [ $? -eq 1 ] && {
+        echo invalid hex code
+        exit 1
+    }
+
+    printf '#%s\n' ${color#\#}
+    block "$color"
+    block "$color"
+    block "$color"
+}
+
+check() {
+    color=$1
+
+    [ ${#color} -eq 7 ] && {
+        case $color in
+            \#[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]) return 0;;
+        esac
+    }
+
+    [ ${#color} -eq 6 ] && {
+        case $color in
+            [[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]) return 0;;
+        esac
+    }
+
+    return 1
+}
+
+block() {
+    set -- ${1#\#}
+
+    red=${1%[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]}
+    green=${1%[[:xdigit:]][[:xdigit:]]}; green=${green#[[:xdigit:]][[:xdigit:]]}
+    blue=${1#[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]}
+
+    red=$(printf '%d' 0x${red})
+    green=$(printf '%d' 0x${green})
+    blue=$(printf '%d' 0x${blue})
+
+    printf '\033[48;2;%s;%s;%sm       \033[m\n' $red $green $blue
+}
+
+main "$@"
