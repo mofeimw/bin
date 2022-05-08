@@ -59,7 +59,7 @@ parse() {
             body+=("        <li>$line</li>")
 
         # ====== plain text ======
-        elif [[ $line =~ ^[\*#\$!_/[:alnum:]].+$ ]]; then
+        elif [[ $line =~ ^[\*#\$!_/[:blank:][:alnum:]].+$ ]]; then
             line=$(fmt "$line")
             if [ $code -ne 0 ]; then
                 if [ -n "$next" ]; then
@@ -112,6 +112,11 @@ fmt() {
 
 main() {
     if [ -f "./$1" ]; then
+        [[ ! $1 =~ \.mw$ ]] && {
+            printf "\033[1m\033[31m${1} is not a .mw file\033[m\n"
+            exit 1
+        }
+
         file="$1"
         project="${file%\.mw}"
     else
@@ -133,7 +138,10 @@ main() {
         contents+=("$line")
     done < "./$file"
 
-# ============= html =============
+    # ============= html =============
+    [ -f ./banner.gif ] && bannerpath="./banner.gif"
+    [ -f "$CIRCUS/assets/banner.gif" ] && bannerpath="$CIRCUS/assets/banner.gif"
+
     css
     html=$(cat <<-END
 <!DOCTYPE html>
@@ -147,7 +155,16 @@ $css
     <body>
 END
     )
-# ======================================
+
+    if [ -f "$bannerpath" ]; then
+        hasbanner=0
+        html+="\n        <header id=\"banner\"></header>"
+        html+="\n        <main id=\"hasBanner\">"
+    else
+        hasbanner=1
+        html+="\n        <main id=\"noBanner\">"
+    fi
+    # ================================
 
     body=()
     code=1
@@ -212,6 +229,7 @@ END
     fi
 
     html+=$(cat <<-END
+        </main>
         <footer>
             <p>mofei</p>
         </footer>
@@ -252,14 +270,25 @@ body {
     font-size: 19px;
     line-height: 18px;
     text-transform: lowercase;
-    padding: 50px 60px 32px;
     overflow-y: scroll;
+}
+
+#banner {
+    height: 18vw;
+    background-image:url('$bannerpath');
+    background-size: cover;
+    background-position: 0 -13.1vw;
+    margin-bottom: 0.3vw;
+}
+
+main {
+    padding: 50px 60px 32px;
 }
 
 h1 {
     color: #D4516f;
     font-family: Yrsa, serif;
-    font-size: 58px;
+    font-size: 60px;
     line-height: 20px;
     margin-top: 6px;
     margin-bottom: 23px;
@@ -268,22 +297,22 @@ h1 {
 h2 {
     color: #1D9AA3;
     font-family: Poppins, sans-serif;
-    font-size: 27px;
+    font-size: 30px;
     font-weight: 700;
     line-height: 27px;
     letter-spacing: 0.7px;
     margin-top: 13px;
-    margin-bottom: 13px;
+    margin-bottom: 16px;
 }
 
 h3 {
     color: #9d75bd;
     font-family: Yrsa, serif;
-    font-size: 26px;
+    font-size: 27px;
     font-weight: 700;
     line-height: 23px;
     margin-top: 6px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 h4 {
@@ -291,7 +320,7 @@ h4 {
     font-family: Poppins, sans-serif;
     font-size: 19px;
     line-height: 23px;
-    margin-bottom: 1px;
+    margin-bottom: 4px;
 }
 
 p {
@@ -342,7 +371,7 @@ footer p {
     font-weight: 500;
     font-size: 15px;
     text-align: center;
-    margin: 30px 0 0 0;
+    margin: 30px 0 20px 0;
 }
 ]END
     )
