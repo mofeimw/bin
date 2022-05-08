@@ -10,10 +10,15 @@ parse() {
         line=${contents[$z]}
 
         [[ $line =~ ^// ]] && continue
-        [ -z "$line" ] && {
-            body+=("<br>")
-            continue
-        }
+        if [ -z "$line" ]; then
+            if [ $code -eq 0 ]; then
+                body+=("")
+                continue
+            else
+                body+=("<br>")
+                continue
+            fi
+        fi
 
         # ====== h1 ======
         if [[ $line =~ ^==+$ ]]; then
@@ -53,17 +58,17 @@ parse() {
 
         # ====== plain text ======
         elif [[ $line =~ ^[[:alnum:]].+$ ]] || [[ $line =~ ^\*.+$ ]]; then
-                line=$(fmt "$line")
-
-                if [ $code -eq 0 ]; then
-                    body+=("$line")
-                elif [ -n "$next" ]; then
+            line=$(fmt "$line")
+            if [ $code -ne 0 ]; then
+                if [ -n "$next" ]; then
                     body+=("<${next}>$line</${next}>")
                     next=""
-                    continue
+                else
+                    body+=("<p>$line</p>")
                 fi
-
-                body+=("<p>$line</p>")
+            else
+                body+=("<code>$line</code>")
+            fi
 
         # fallthrough
         else
@@ -86,7 +91,7 @@ fmt() {
 
     # ** is italicized
     for i in {1..10}; {
-        fmted=$(printf "$fmted" | sed -E 's|(.*)\*\*(.+)\*\*(.*)|\1<i>\2</i>\3|g')
+        fmted=$(printf '%s' "$fmted" | sed -E 's|(.*)\*\*(.+)\*\*(.*)|\1<i>\2</i>\3|g')
 
         echo "$fmted" | grep -q "\*\*"
         [ $? -ne 0 ] && break
@@ -94,7 +99,7 @@ fmt() {
 
     # * is bolded
     for i in {1..10}; {
-        fmted=$(printf "$fmted" | sed -E 's|(.*)\*(.+)\*(.*)|\1<b>\2</b>\3|g')
+        fmted=$(printf '%s' "$fmted" | sed -E 's|(.*)\*(.+)\*(.*)|\1<b>\2</b>\3|g')
 
         echo "$fmted" | grep -q "\*"
         [ $? -ne 0 ] && break
@@ -126,16 +131,15 @@ main() {
         contents+=("$line")
     done < "./$file"
 
-# ============= html & css =============
+# ============= html =============
+    css
     html=$(cat <<-END
 <!DOCTYPE html>
 <html>
     <head>
         <title>$project</title>
         <style>
-            body {
-                color: blue;
-            }
+$css
         </style>
     </head>
     <body>
@@ -180,7 +184,13 @@ END
             fi
         fi
 
-        html+="        ${body[$z]}\n"
+        # don't indent code blocks
+        re2='<code>'
+        if [[ ${body[$z]} =~ $re2 ]]; then
+            html+="${body[$z]}\n"
+        else
+            html+="        ${body[$z]}\n"
+        fi
 
         # open a 2nd level
         # if the next element is a list but the current one is not
@@ -210,6 +220,127 @@ END
 
     printf "$html" > "${project}.html"
     printf "\033[1m\033[35m[motion]\033[m rendered to \033[1m\033[32m${project}.html\033[m\n"
+}
+
+css() {
+    css=$(cat <<]END
+/* START [ */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Poppins:ital,wght@0,700;1,700&family=Yrsa:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+
+*, *:before, *:after {
+    scrollbar-width: none;
+    box-sizing: inherit;
+}
+
+html { box-sizing: border-box; }
+
+body::-webkit-scrollbar {
+    display: none;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #232530;
+    color: #F9CEC3;
+    font-family: Yrsa, serif;
+    font-size: 19px;
+    line-height: 18px;
+    text-transform: lowercase;
+    padding: 60px;
+    padding-bottom: 32px;
+    overflow-y: scroll;
+}
+
+h1 {
+    color: #D4516f;
+    font-family: Yrsa, serif;
+    font-size: 58px;
+    line-height: 20px;
+}
+
+h2 {
+    color: #1D8991;
+    font-family: Poppins, sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    padding-bottom: 13px;
+    line-height: 30px;
+    letter-spacing: 0.7px;
+}
+
+h3 {
+    color: #63798F;
+    font-family: Yrsa, serif;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 23px;
+    padding-bottom: 4px;
+}
+
+h4 {
+    color: #9d75bd;
+    font-family: Poppins, sans-serif;
+    font-size: 17px;
+    line-height: 23px;
+    padding-bottom: 1px;
+}
+
+p {
+    font-size: 19px;
+    line-height: 23px;
+}
+
+b {
+    color: #D4516f;
+}
+
+pre {
+    background-color: #373a4f;
+    color: #B08CCC;
+    padding: 20px 20px 5px;
+    border-radius: 6px;
+    display: inline-block;
+    line-height: 23px;
+}
+
+code {
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: -0.7px;
+}
+
+ul {
+    list-style-type: disc;
+    font-size: 18.5px;
+    font-weight: 400;
+    margin-left: 18px;
+    padding: 0;
+}
+
+ul > ul {
+    list-style-type: disc;
+    margin-left: 40px;
+}
+
+li {
+    line-height: 21px;
+}
+
+footer p {
+    color: #D4516f;
+    font-family: 'Fira Code', monospace;
+    font-weight: 500;
+    font-size: 15px;
+    text-align: center;
+    margin: 30px 0 0 0;
+}
+]END
+    )
 }
 
 main "$@"
