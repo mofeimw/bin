@@ -1,0 +1,204 @@
+#!/bin/bash
+#
+# mofei's notion => motion
+
+# =============
+#    syntax
+# =============
+parse() {
+    for ((z = ${#file[@]}; z >= 0; z--)); {
+        line=${file[$z]}
+
+        [ -z "$line" ] && continue
+        [[ $line =~ ^// ]] && continue
+
+        # ====== h1 ======
+        if [[ $line =~ ^==+$ ]]; then
+            next="h1"
+
+        # ====== h2 ======
+        elif [[ $line =~ ^--+$ ]]; then
+            next="h2"
+
+        # ====== h3 ======
+        elif [[ $line =~ ^###[[:blank:]](.+)$ ]]; then
+            body+=("<h3>${BASH_REMATCH[1]}</h3>")
+
+        # ====== h4 ======
+        elif [[ $line =~ ^####[[:blank:]](.+)$ ]]; then
+            body+=("<h4>${BASH_REMATCH[1]}</h4>")
+
+        # ====== code ======
+        elif [ "$line" = '$$$' ]; then
+            if [ $code -eq 1 ]; then
+                body+=("</pre>")
+                code=0
+            elif [ $code -eq 0 ]; then
+                body+=("<pre>")
+                code=-1
+            fi
+
+        # ====== list ======
+        elif [[ $line =~ ^-[[:blank:]](.+)$ ]]; then
+            line=$(fmt "${BASH_REMATCH[1]}")
+            body+=("    <li>$line</li>")
+
+        # ====== nested list ======
+        elif [[ $line =~ '    '-[[:blank:]](.+)$ ]]; then
+            line=$(fmt "${BASH_REMATCH[1]}")
+            body+=("        <li>$line</li>")
+
+        # ====== plain text ======
+        elif [[ $line =~ ^[[:alnum:]].+$ ]] || [[ $line =~ ^\*.+$ ]]; then
+                line=$(fmt "$line")
+
+                if [ $code -eq 0 ]; then
+                    body+=("$line")
+                elif [ -n "$next" ]; then
+                    body+=("<${next}>$line</${next}>")
+                    next=""
+                    continue
+                fi
+
+                body+=("<p>$line</p>")
+
+        # fallthrough
+        else
+            line=$(fmt "$line")
+            if [ -n "$next" ]; then
+                body+=("<${next}>$line</${next}>")
+                next=""
+            else
+                body+=("$line")
+            fi
+        fi
+    }
+}
+
+# =============
+#    format
+# =============
+fmt() {
+    fmted="$1"
+
+    # ** is italicized
+    for i in {1..10}; {
+        fmted=$(printf "$fmted" | sed -E 's|(.*)\*\*(.+)\*\*(.*)|\1<i>\2</i>\3|g')
+
+        echo "$fmted" | grep -q "\*\*"
+        [ $? -ne 0 ] && break
+    }
+
+    # * is bolded
+    for i in {1..10}; {
+        fmted=$(printf "$fmted" | sed -E 's|(.*)\*(.+)\*(.*)|\1<b>\2</b>\3|g')
+
+        echo "$fmted" | grep -q "\*"
+        [ $? -ne 0 ] && break
+    }
+
+    printf "$fmted"
+}
+
+main() {
+    [ -f "$1" ] && file="$1" || {
+        printf "file: "
+        read file
+
+        [ ! -f "$file" ] && {
+            echo "file does not exist."
+            exit 1
+        }
+    }
+
+    title="${file%\.mw}"
+
+    IFS=$'\n' read -d '' -ra file < $file
+
+# ============= html & css =============
+    html=$(cat <<-END
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>$title</title>
+        <style>
+            body {
+                color: blue;
+            }
+        </style>
+    </head>
+    <body>
+END
+    )
+# ======================================
+
+    body=()
+    code=1
+    next=""
+
+    parse
+
+    # run it back
+    for ((z = ${#body[@]}; z >= 0; z--)); {
+        # ------ list nesting ------
+        re='<li>'
+
+        # close out 2nd level of nesting
+        # if the previous element was a list but the current one is not
+        if [ $z -ne $((${#body[@]} - 1)) ] && [[ ${body[$z + 1]} =~ '        '$re ]]; then
+            if [[ ! ${body[$z]} =~ '        '$re ]]; then
+                html+="            </ul>\n"
+            fi
+        fi
+
+        # close out 1st level of nesting
+        # if the previous element was a list but the current one is not
+        if [ $z -ne $((${#body[@]} - 1)) ] && [[ ${body[$z + 1]} =~ '    '$re ]]; then
+            if [[ ! ${body[$z]} =~ '    '$re ]]; then
+                html+="        </ul>\n"
+            fi
+        fi
+
+        # open a 1st level
+        # if the next element is a list but the current one is not
+        if [ $z -ne 0 ] && [[ ${body[$z - 1]} =~ $re ]]; then
+            if [[ ! ${body[$z]} =~ '    '$re ]]; then
+                html+="        ${body[$z]}\n"
+                html+="        <ul>\n"
+                continue
+            fi
+        fi
+
+        html+="        ${body[$z]}\n"
+
+        # open a 2nd level
+        # if the next element is a list but the current one is not
+        if [ $z -ne 0 ] && [[ ${body[$z - 1]} =~ '        '$re ]]; then
+            if [[ ! ${body[$z]} =~ '        '$re ]]; then
+                html+="            <ul>\n"
+            fi
+        fi
+    }
+
+    # close out nest if the last element is a list element
+    if [[ ${body[0]} =~ '       '$re ]]; then
+        html+="            <ul>\n"
+        html+="        <ul>\n"
+    elif [[ ${body[0]} =~ '    '$re ]]; then
+        html+="        <ul>\n"
+    fi
+
+    html+=$(cat <<-END
+        <footer>
+            <p>mofei</p>
+        </footer>
+    </body>
+</html>
+END
+    )
+
+    printf "$html" > "${title}.html"
+    printf "\033[1m\033[35m[motion]\033[m rendered to ${title}.html.\n"
+}
+
+main "$@"

@@ -30,7 +30,7 @@ main() {
                 row; row; row
 
                 # pbcopy is macOS specific
-                [ $(uname) = Darwin ] && eval "echo \$_$z | pbcopy"
+                [ $(uname) = Darwin ] && eval "printf \$_$z | pbcopy"
 
                 [ $z -ne 0 ] && eval "for _ in {0..$((z - 1))}; do printf '          '; done"
                 eval block \$_$z
