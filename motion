@@ -102,25 +102,23 @@ fmt() {
 
 main() {
     [ -f "$1" ] && file="$1" || {
-        printf "file: "
-        read file
+        printf "\033[1m\033[35mproject: \033[m"
+        read project
 
-        [ ! -f "$file" ] && {
-            echo "file does not exist."
+        [ ! -f "$project".mw ] && {
+            printf "\033[1m\033[31m${project}.mw does not exist\033[m\n"
             exit 1
         }
     }
 
-    title="${file%\.mw}"
-
-    IFS=$'\n' read -d '' -ra file < $file
+    IFS=$'\n' read -d '' -ra file < "${project}.mw"
 
 # ============= html & css =============
     html=$(cat <<-END
 <!DOCTYPE html>
 <html>
     <head>
-        <title>$title</title>
+        <title>$file</title>
         <style>
             body {
                 color: blue;
@@ -197,8 +195,8 @@ END
 END
     )
 
-    printf "$html" > "${title}.html"
-    printf "\033[1m\033[35m[motion]\033[m rendered to ${title}.html.\n"
+    printf "$html" > "${project}.html"
+    printf "\033[1m\033[35m[motion]\033[m rendered to \033[1m\033[32m${project}.html\033[m\n"
 }
 
 main "$@"
