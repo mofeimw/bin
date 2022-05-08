@@ -262,11 +262,11 @@ h1 {
     font-size: 58px;
     line-height: 20px;
     margin-top: 6px;
-    margin-bottom: 19px;
+    margin-bottom: 23px;
 }
 
 h2 {
-    color: #1D8991;
+    color: #1D9AA3;
     font-family: Poppins, sans-serif;
     font-size: 27px;
     font-weight: 700;
@@ -277,9 +277,9 @@ h2 {
 }
 
 h3 {
-    color: #63798F;
+    color: #9d75bd;
     font-family: Yrsa, serif;
-    font-size: 25px;
+    font-size: 26px;
     font-weight: 700;
     line-height: 23px;
     margin-top: 6px;
@@ -287,9 +287,9 @@ h3 {
 }
 
 h4 {
-    color: #9d75bd;
+    color: #D78374;
     font-family: Poppins, sans-serif;
-    font-size: 17px;
+    font-size: 19px;
     line-height: 23px;
     margin-bottom: 1px;
 }
