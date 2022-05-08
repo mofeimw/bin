@@ -121,6 +121,7 @@ main() {
 
     contents=()
     # IFS=$'\n' read -d '' -ra file < "$file"
+    IFS=$'\n'
     while read -r line; do
         contents+=("$line")
     done < "./$file"
