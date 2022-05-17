@@ -1,0 +1,20 @@
+#!/bin/bash
+
+display=$(xrandr --verbose --current | grep ^eDP-1 -A5)
+
+cur="${display##* }"
+new=$cur
+
+if [ $# -eq 0 ]; then
+    echo $cur
+    exit 0
+elif [ $1 = up ]; then
+    [ $cur = 1.0 ] && exit 1
+    new=$(echo "$cur + 0.1" | bc)
+elif [ $1 = down ]; then
+    [ $cur = 0.0 ] && exit 1
+    new=$(echo "$cur - 0.1" | bc)
+fi
+
+xrandr --output eDP-1 --brightness $new
+
