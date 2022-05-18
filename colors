@@ -1,0 +1,7 @@
+#!/bin/sh
+
+printf '\033[2J\033[H\033[?25l'
+for i in {0..7}; do
+    printf '\033[4%sm    ' $i
+done
+printf '\n'
