@@ -13,4 +13,5 @@ quotes=(
 
 (( z = RANDOM % ${#quotes[@]} ))
 
-printf "${quotes[$z]}"
+ratpoison -c "echo ${quotes[$z]}"
+exit 0

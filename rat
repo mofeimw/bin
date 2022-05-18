@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# 2880.1800
+
+main() {
+    rat=$(ratpoison -c ratinfo)
+
+    x=${rat%% *}
+    y=${rat##* }
+
+    [ $# -ne 2 ] && exit
+    [ $1 = exchange ] && exchange $2
+    [ $1 = move ] && move $2
+}
+
+exchange() {
+    if [ $1 = horizontal ]; then
+        if [ $x -le 1440 ]; then
+            ratpoison -c exchangeright
+            move right
+        else
+            ratpoison -c exchangeleft
+            move left
+        fi
+    elif [ $1 = vertical ]; then
+        if [ $y -le 720 ]; then
+            ratpoison -c exchangedown
+            move bottom
+        else
+            ratpoison -c exchangeup
+            move top
+        fi
+    fi
+}
+
+move() {
+    if [ $1 = left ]; then
+        ratpoison -c "ratwarp 720 $y"
+    elif [ $1 = right ]; then
+        ratpoison -c "ratwarp 2160 $y"
+    elif [ $1 = top ]; then
+        ratpoison -c "ratwarp $x 450"
+    elif [ $1 = bottom ]; then
+        ratpoison -c "ratwarp $x 1350"
+    fi
+}
+
+main "$@"
+# keeps ratpoison happy and prevents bar popup
+exit 0
