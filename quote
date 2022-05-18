@@ -1,0 +1,16 @@
+#!/bin/bash
+
+quotes=(
+    "hola mofei"
+    "welcome mofei"
+    "hello mofei"
+    "the circus arrives without warning."
+    "an innkeeper kept an inn at a particularly inhospitable crossroads."
+    "for no mortal can love the moon. not for long."
+    "london, blackfriars bridge, 2008."
+    "stuart little versus bubonic plague."
+)
+
+(( z = RANDOM % ${#quotes[@]} ))
+
+printf "${quotes[$z]}"
