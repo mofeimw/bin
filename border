@@ -1,0 +1,14 @@
+#!/bin/sh
+
+[ $# -ne 1 ] && exit 1
+
+border=$(ratpoison -c "set border")
+
+if [ $1 = inc ]; then
+    border=$(( border + 30 ))
+elif [ $1 = dec ]; then
+    border=$(( border - 30 ))
+fi
+
+ratpoison -c "set border $border"
+exit 0
