@@ -1,0 +1,25 @@
+#!/bin/sh
+
+main() {
+    [ $# -ne 1 ] && exit 1
+
+    gap=$(ratpoison -c "set border")
+
+    if [ $1 = inc ]; then
+        gap=$(( gap + 20 ))
+    elif [ $1 = dec ]; then
+        gap=$(( gap - 20 ))
+    elif [ $1 = toggle ]; then
+        if [ $gap -eq 0 ]; then
+            gap=40
+        else
+            gap=0
+        fi
+    fi
+
+    ratpoison -c "set border $gap"
+    ratpoison -c "set padding $gap $gap $gap $gap"
+}
+
+main "$@"
+exit 0
