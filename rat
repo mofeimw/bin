@@ -36,12 +36,16 @@ exchange() {
 move() {
     if [ $1 = left ]; then
         ratpoison -c "ratwarp 720 $y"
+        ratpoison -c focusleft
     elif [ $1 = right ]; then
         ratpoison -c "ratwarp 2160 $y"
+        ratpoison -c focusright
     elif [ $1 = top ]; then
         ratpoison -c "ratwarp $x 450"
+        ratpoison -c focusup
     elif [ $1 = bottom ]; then
         ratpoison -c "ratwarp $x 1350"
+        ratpoison -c focusdown
     fi
 }
 
