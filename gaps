@@ -1,24 +1,43 @@
 #!/bin/sh
 
+BAR_HEIGHT=65
+
 main() {
     [ $# -ne 1 ] && exit 1
 
     gap=$(ratpoison -c "set border")
+    padding=$(ratpoison -c "set padding")
+
+    top=${padding#* }
+    top=${top% *}
+    top=${top% *}
+
+    [ $top -ne $gap ] && bar=0 || bar=1
 
     if [ $1 = inc ]; then
-        gap=$(( gap + 20 ))
+        gap=$((gap + 20))
     elif [ $1 = dec ]; then
-        gap=$(( gap - 20 ))
+        gap=$((gap - 20))
     elif [ $1 = toggle ]; then
         if [ $gap -eq 0 ]; then
             gap=40
         else
             gap=0
         fi
+    elif [ $1 = bar ]; then
+        if [ $bar -eq 0 ]; then
+            bar=1
+            killall polybar
+        else
+            bar=0
+            polybar bar &
+        fi
     fi
 
+    [ $bar -eq 0 ] && top=$((gap + BAR_HEIGHT)) || top=$gap
+
     ratpoison -c "set border $gap"
-    ratpoison -c "set padding $gap $gap $gap $gap"
+    ratpoison -c "set padding $gap $top $gap $gap"
 }
 
 main "$@"
