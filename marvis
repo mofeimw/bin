@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+# all of m.a.r.v.i.s.'s capabilities
+functions() {
+    case "$1" in
+        exit|quit|bye)
+            exit
+            ;;
+
+        clear)
+            reset
+            return 0
+            ;;
+
+        hi|hello|sup|yo|hola)
+            say "hello sir"
+            ;;
+
+        *)
+            say "i'm sorry, i didn't quite catch that"
+            ;;
+    esac
+
+    [ $line -ge $((LINES - 1)) ] && { read -t 3 -n 1; reset; } || prompt
+}
+
+# reset terminal
+reset() {
+    read -r LINES COLUMNS < <(stty size)
+    line=1
+
+    clear
+    hud
+    [ $LINES -ge 25 ] && { [ $COLUMNS -ge 80 ] && banner; }
+    [ $COLUMNS -ge 125 ] && pipes
+    printf '\033[%s;8H\033[1m\033[31m$  \033[m' $line
+}
+
+# draw HUD sidebar
+hud() {
+    marvis=( m a r v i s )
+    ((pad = (LINES - 6)/2))
+
+    for ((i = 0; i < pad; i++)); { printf '\033[1m\033[44m\033[30m   \033[m\n'; sleep 0.03; }
+    for letter in "${marvis[@]}"; { printf '\033[1m\033[44m\033[30m %s \033[m\n' $letter; sleep 0.03; }
+    [ $((LINES % 2)) -ne 0 ] && ((pad++))
+    for ((i = 0; i < pad; i++)); { [ $i -eq $((pad - 1)) ] && printf '\033[1m\033[44m\033[30m   \033[m' || printf '\033[1m\033[44m\033[30m   \033[m\n'; sleep 0.03; }
+}
+
+# draw banner
+banner() {
+    banner=(
+        "████      ████      ████      ████████    ██      ██    ██      ██████"
+        "██  ██  ██  ██    ██    ██    ██    ██    ██      ██    ██    ██"
+        "██    ██    ██    ████████    ████████    ██      ██    ██      ████"
+        "██          ██    ██    ██    ██  ██        ██  ██      ██          ██"
+        "██          ██    ██    ██    ██    ██        ██        ██    ██████"
+    )
+
+    for row in "${banner[@]}"; {
+        printf '\033[%s;8H\033[1m\033[31m%s\033[m' $line "$row"
+        sleep 0.1
+        ((line++))
+    }
+
+    line=7
+}
+
+# pipes.sh
+pipes() {
+    :
+}
+
+# talk
+say() {
+    ((line++))
+    printf '\033[%s;8H\033[1m\033[34m%s\033[m' $line "$1"
+    ((line++))
+}
+
+# draw prompt
+prompt() {
+    ((line++))
+    printf '\033[%s;8H\033[1m\033[31m$  \033[m' $line
+}
+
+# the jind stone
+main() {
+    # catch window resizes and exits
+    trap 'reset' SIGWINCH
+    trap "stty icanon echo; printf '\033[?25h\033[2J\033[H'; exit 1" EXIT INT
+    
+    # fresh start
+    reset
+
+    # take orders
+    while :; do
+        read input
+        cmd="${input%% *}"
+        args="${input##$cmd }"
+        [ "$args" = "$cmd" ] && args=""
+
+        functions "$cmd" "$args"
+    done
+}
+
+# bring m.a.r.v.i.s. online!
+main "$@"
