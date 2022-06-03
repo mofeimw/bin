@@ -1,0 +1,122 @@
+#!/bin/sh
+
+random_extension() {
+    set -- c cpp h rs dll exe jar class object conf ttf otf mp3 mp4 mkv avi ogg wav midi png jpg jpeg gif pdf rtf docx pptx psd 7z deb rar tar z zip bin iso db apk ipa
+    r=$(awk "BEGIN { srand(); print int(1 + rand() * $#) }")
+    eval "ext=\${$r}"
+    out="${name}.${ext}"
+}
+
+main() {
+    trap int INT
+    trap "stty echo; exit 1" EXIT
+
+    printf "🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦\n"
+    printf "💰💰💰 \033[1m\033[32mdenver\033[m 💰💰💰\n"
+    printf "🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦\n\n"
+
+    if [ $# -eq 0 ]; then
+        printf "\033[1m\033[31mplease specify the target.\033[m\n"
+        exit 1
+    elif [ $# -ne 1 ]; then
+        printf "\033[1m\033[31mtoo many arguments.\033[m\n"
+        exit 1
+    fi
+
+    in="$1"
+    name="${1%%.*}"
+
+    if [ ! -f "$in" ]; then
+        printf "\033[1m\033[31mtarget does not exist.\033[m\n"
+        exit 1
+    fi
+
+    action=""
+    while [ -z "$action" ]; do
+        printf "\033[1m\033[33mencrypt or decrypt?\033[m "
+        read prompt
+
+        case "$prompt" in
+            e|E|encrypt|Encrypt|enc)
+                action="encrypt"
+                encrypt
+            ;;
+
+            d|D|decrypt|Decrypt|dec)
+                action="decrypt"
+                decrypt
+            ;;
+
+            *)
+                printf "\033[1m\033[31minvalid option. please try again.\033[m\n\n"
+            ;;
+        esac
+    done
+}
+
+password() {
+    unset -v password
+    unset -v password_confirm
+    set +o allexport
+    stty -echo
+
+    match=-1
+    while [ $match -ne 0 ]; do
+        printf "password: "
+        read password
+        printf '\n'
+
+        if [ "$action" = "decrypt" ]; then
+            return
+        else
+            printf "confirm password: "
+            read password_confirm
+            printf '\n'
+        fi
+
+        if [ "$password" = "$password_confirm" ]; then
+            match=0
+        else
+            printf "\033[1m\033[31mpasswords don't match.\033[m\n\n"
+        fi
+    done
+
+    stty echo
+}
+
+encrypt() {
+    random_extension
+    password
+    printf '\n'
+
+    openssl enc -aes-256-cbc -e -md sha512 -pbkdf2 -iter 100000 -salt -k "$password" -in "$in" -out "$out"
+
+    if [ $? -eq 0 ]; then
+        printf "\033[1m\033[32mfile successfully encrypted.\033[m\n"
+    else
+        printf "\033[1m\033[31mencryption unsuccessful.\033[m\n"
+        rm "$out"
+    fi
+}
+
+decrypt() {
+    password
+    printf '\n'
+
+    openssl enc -aes-256-cbc -d -md sha512 -pbkdf2 -iter 100000 -salt -k "$password" -in "$in" -out "$name" 2> /dev/null
+
+    if [ $? -eq 0 ]; then
+        printf "\033[1m\033[32mfile successfully decrypted.\033[m\n"
+    else
+        printf "\033[1m\033[31mdecryption unsuccessful.\033[m\n"
+        rm "$name"
+    fi
+}
+
+int() {
+    [ -f "$out" ] && rm "$out"
+    stty echo
+    exit 1
+}
+
+main "$@"
