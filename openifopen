@@ -1,0 +1,9 @@
+#!/bin/sh
+
+[ $# -ne 1 ] && exit 1
+
+z=${1##/System}
+z=${z##/Applications/}
+z=${z%%\.app}
+
+[ -n "$(pgrep -f $z)" ] && open "$1"
