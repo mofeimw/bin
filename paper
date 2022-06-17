@@ -1,13 +1,17 @@
 #!/bin/sh
 
 if [ -f "$HOME/Pictures/wallpaper/$1" ]; then
-    feh --bg-fill "$HOME/Pictures/wallpaper/$1"
+    # feh --bg-fill "$HOME/Pictures/wallpaper/$1"
+    wal -i "$HOME/Pictures/wallpaper/$1"
 elif [ -f "$HOME/Pictures/wallpaper/${1}.jpg" ]; then
-    feh --bg-fill "$HOME/Pictures/wallpaper/${1}.jpg"
+    # feh --bg-fill "$HOME/Pictures/wallpaper/${1}.jpg"
+    wal -i "$HOME/Pictures/wallpaper/${1}.jpg"
 elif [ -f "$HOME/Pictures/wallpaper/${1}.jpeg" ]; then
-    feh --bg-fill "$HOME/Pictures/wallpaper/${1}.jpeg"
+    # feh --bg-fill "$HOME/Pictures/wallpaper/${1}.jpeg"
+    wal -i "$HOME/Pictures/wallpaper/${1}.jpeg"
 elif [ -f "$HOME/Pictures/wallpaper/${1}.png" ]; then
-    feh --bg-fill "$HOME/Pictures/wallpaper/${1}.png"
+    # feh --bg-fill "$HOME/Pictures/wallpaper/${1}.png"
+    wal -i "$HOME/Pictures/wallpaper/${1}.png"
 else
     printf '\033[1m\033[38;2;214;92;120m%s\033[m\n' "file not found."
     for file in $HOME/Pictures/wallpaper/*; do
