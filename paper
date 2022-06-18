@@ -3,16 +3,20 @@
 main() {
     if [ -f "$HOME/Pictures/wallpaper/$1" ]; then
         # feh --bg-fill "$HOME/Pictures/wallpaper/$1"
-        wal -i "$HOME/Pictures/wallpaper/$1"
+        wal --backend wal -i "$HOME/Pictures/wallpaper/$1"
+
     elif [ -f "$HOME/Pictures/wallpaper/${1}.jpg" ]; then
         # feh --bg-fill "$HOME/Pictures/wallpaper/${1}.jpg"
-        wal -i "$HOME/Pictures/wallpaper/${1}.jpg"
+        wal --backend wal -i "$HOME/Pictures/wallpaper/${1}.jpg"
+
     elif [ -f "$HOME/Pictures/wallpaper/${1}.jpeg" ]; then
         # feh --bg-fill "$HOME/Pictures/wallpaper/${1}.jpeg"
-        wal -i "$HOME/Pictures/wallpaper/${1}.jpeg"
+        wal --backend wal -i "$HOME/Pictures/wallpaper/${1}.jpeg"
+
     elif [ -f "$HOME/Pictures/wallpaper/${1}.png" ]; then
         # feh --bg-fill "$HOME/Pictures/wallpaper/${1}.png"
-        wal -i "$HOME/Pictures/wallpaper/${1}.png"
+        wal --backend wal -i "$HOME/Pictures/wallpaper/${1}.png"
+
     else
         trap "stty icanon echo; printf '\033[?25h\033[2J\033[H'; exit 0" EXIT INT
         stty -icanon -echo
@@ -48,7 +52,7 @@ main() {
                 ;;
 
                 " "|"")
-                    wal -q -i "${pictures[$cursor]}"
+                    wal --backend wal -q -i "${pictures[$cursor]}"
                     break
                 ;;
 
