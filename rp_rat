@@ -50,5 +50,6 @@ move() {
 }
 
 main "$@"
+
 # keeps ratpoison happy and prevents bar popup
 exit 0

@@ -49,7 +49,7 @@ main() {
 
                 " "|"")
                     wal -q -i "${pictures[$cursor]}"
-                    exit 0
+                    break
                 ;;
 
                 q)
@@ -60,6 +60,8 @@ main() {
             render
         done
     fi
+
+    [ -f ~/.cache/wal/colors ] && rp_wal
 }
 
 up() {
