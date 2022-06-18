@@ -163,7 +163,7 @@ sub ws_restore
         rp_call( "next" );
     }
 
-    rp_call( "echo Workspace $which" );
+    # rp_call( "echo Workspace $which" );
 
 }
 
