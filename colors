@@ -8,4 +8,4 @@ while [ $z -lt 8 ]; do
     z=$((z + 1))
 done
 
-printf '\n'
+printf '\033[m\n'
