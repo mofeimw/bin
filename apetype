@@ -1,0 +1,78 @@
+#!/bin/bash
+
+sentences=(
+    "the quick brown fox jumps over the lazy dog"
+    "sphinx of black quartz, judge my vow"
+    "the five boxing wizards jump quickly"
+    "how vexingly quick daft zebras jump"
+)
+
+main() {
+    trap "stty icanon echo; printf '\033[2J\033[H\033[?25h'; exit 1" EXIT INT
+    stty -icanon -echo
+
+    get_sentences "$@"
+    get_sentence
+
+    typing
+}
+
+typing() {
+    cursor=0
+
+    printf '\033[2J' # clear the screen
+    printf '\033[?25l' # hide the cursor
+    printf '\033[1000A' # move up
+    printf "\033[36m$sentence\033[m" # print out the sentence in grey
+    printf '\033[1000D' # move back to the start of the line
+
+    while key=$(dd ibs=1 count=1 2>/dev/null); do
+        if [ "$key" = "${characters[$cursor]}" ]; then
+            printf "\033[${cursor}D" # move back to the start of the line
+            printf '\033[37m' # change text color to white
+
+            # print out ONLY the part that has already been typed
+            z=0
+            while [ $z -le $cursor ]; do
+                printf "${characters[$z]}"
+                ((z++))
+            done
+
+            ((cursor++))
+        fi
+
+        if [ $cursor -eq ${#characters[@]} ]; then
+            printf '\033[1000D' # move back to the start of the line
+
+            get_sentence
+            typing
+        fi
+    done
+}
+
+get_sentences() {
+    [ -f "sentences" ] && file="sentences"
+    [ -f "sentences.txt" ] && file="sentences.txt"
+    [ -f "$1" ] && file="$1"
+
+    if [ -n "$file" ]; then
+        sentences=()
+        while read -r line; do
+            sentences+=("$line")
+        done < "$file"
+    fi
+}
+
+get_sentence() {
+    sentence="${sentences[$(($RANDOM % ${#sentences[@]}))]}"
+
+    # split sentence into an array of characters
+    characters=()
+    i=0
+    while [ $i -lt ${#sentence} ]; do
+        characters[$i]=${sentence:$i:1}
+        ((i++))
+    done
+}
+
+main "$@"
