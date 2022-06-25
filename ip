@@ -1,0 +1,93 @@
+#!/bin/sh
+
+main() {
+    printf '\033[2J\033[H\033[?25l'
+    fetching
+
+    ip
+
+    printf '\033[2J\033[H'
+    render
+
+    printf "\033(B\033[?25h"
+}
+
+ip() {
+    json=$(curl -s json.myip.wtf)
+
+    [ $? -ne 0 ] && error
+
+    ip=$(echo "$json" | jq -r '.YourFuckingIPAddress')
+    isp=$(echo "$json" | jq -r '.YourFuckingISP')
+    location=$(echo "$json" | jq -r '.YourFuckingLocation')
+
+    local=${location%,*}
+    country=${location#$local, }
+}
+
+render() {
+    render=""
+
+    render+="\033(0lqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqk\n"
+    render+="x                               x\n"
+
+    render+="x  \033(BLocation: $local\033(0"
+    for ((i = 0; i < $((19 - ${#local} )); i++)); { render+=" "; }; render+="x\n"
+    render+="x                               x\n"
+
+    render+="x  \033(BCountry: $country\033(0"
+    for ((i = 0; i < $((20 - ${#country} )); i++)); { render+=" "; }; render+="x\n"
+    render+="x                               x\n"
+
+    render+="x  \033(BIP: $ip\033(0"
+    for ((i = 0; i < $((25 - ${#ip} )); i++)); { render+=" "; }; render+="x\n"
+    render+="x                               x\n"
+
+    render+="x  \033(BISP: $isp\033(0"
+    for ((i = 0; i < $((24 - ${#isp} )); i++)); { render+=" "; }; render+="x\n"
+
+    render+="x                               x\n"
+    render+="mqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqj"
+
+    printf "$render"
+}
+
+fetching() {
+    fetching+="\033(0lqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqk\n"
+    fetching+="x                               x\n"
+    fetching+="x                               x\n"
+    fetching+="x                               x\n"
+    fetching+="x                               x\n"
+    fetching+="x          \033(Bfetching...\033(0          x\n"
+    fetching+="x                               x\n"
+    fetching+="x                               x\n"
+    fetching+="x                               x\n"
+    fetching+="x                               x\n"
+    fetching+="mqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqj\n"
+
+    printf "$fetching"
+}
+
+error() {
+    printf '\033[2J\033[H'
+
+    error=""
+    error+="\033(0lqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqk\n"
+    error+="x                               x\n"
+    error+="x                               x\n"
+    error+="x                               x\n"
+    error+="x                               x\n"
+    error+="x       \033(Bconnection error\033(0        x\n"
+    error+="x                               x\n"
+    error+="x                               x\n"
+    error+="x                               x\n"
+    error+="x                               x\n"
+    error+="mqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqj\n"
+
+    printf "$error"
+
+    printf "\033(B\033[?25h"
+    exit 1
+}
+
+main "$@"
