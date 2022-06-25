@@ -4,7 +4,7 @@ main() {
     printf '\033[2J\033[H\033[?25l'
     fetching
 
-    ip
+    data
 
     printf '\033[2J\033[H'
     render
@@ -12,7 +12,7 @@ main() {
     printf "\033(B\033[?25h"
 }
 
-ip() {
+data() {
     json=$(curl -s json.myip.wtf)
 
     [ $? -ne 0 ] && error
@@ -58,7 +58,7 @@ fetching() {
     fetching+="x                               x\n"
     fetching+="x                               x\n"
     fetching+="x                               x\n"
-    fetching+="x          \033(Bfetching...\033(0          x\n"
+    fetching+="x          \033(BFetching...\033(0          x\n"
     fetching+="x                               x\n"
     fetching+="x                               x\n"
     fetching+="x                               x\n"
@@ -77,7 +77,7 @@ error() {
     error+="x                               x\n"
     error+="x                               x\n"
     error+="x                               x\n"
-    error+="x       \033(Bconnection error\033(0        x\n"
+    error+="x       \033(BConnection Error\033(0        x\n"
     error+="x                               x\n"
     error+="x                               x\n"
     error+="x                               x\n"
