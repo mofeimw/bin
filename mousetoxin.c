@@ -22,10 +22,16 @@ char BLACKLIST[] = {
 
 char INPUT[512] = "";
 
+// define event tap variable
+CFMachPortRef eventTap;
+
 // simulate pressing a key
 void pressKey(int keyCode){
-    // create keypress events
-    // using a HID hardware event source
+    // kill the event tap
+    CGEventTapEnable(eventTap, false);
+
+    // create keydown and keyup events
+    // using HID hardware event source
     CGEventRef down = CGEventCreateKeyboardEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState), (CGKeyCode) keyCode, true);
     CGEventRef up = CGEventCreateKeyboardEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState), (CGKeyCode) keyCode, false);
 
@@ -96,8 +102,8 @@ void launcher(CGKeyCode keyCode) {
     if (strlen(INPUT) == 1) {
         for (int i = 0; i < strlen(BLACKLIST); i++) {
             if (INPUT[0] == BLACKLIST[i]) {
-                pressKey(0);               // send buffer key
-                pressKey((int) keyCode); // send original key
+                // send the original key
+                pressKey((int) keyCode);
                 exit(0);
             }
         }
@@ -108,8 +114,9 @@ void launcher(CGKeyCode keyCode) {
     if (alias != NULL) {
         // run the alias if found
         system(strdup(alias));
-        pressKey(0);    // buffer
-        pressKey(53);   // escape
+
+        // escape & exit
+        pressKey(53);
         exit(0);
     }
 }
@@ -147,7 +154,7 @@ const char *fromKeyCode(int keyCode, bool shift, bool caps) {
         case 49:  return " ";                                     // space
         case 36:  return "";                                      // enter
         case 51:  INPUT[strlen(INPUT) - 1] = '\0'; return ""; // backspace
-        case 53:  pressKey(53); pressKey(53); exit(0);           // escape
+        case 53:  pressKey(53); exit(0);                         // escape
 
         case 18:  return shift ? "!" : "1";
         case 19:  return shift ? "@" : "2";
@@ -204,6 +211,7 @@ void *threadproc(void *arg) {
     while(1)
     {
         sleep(6);
+        pressKey(0);
         pressKey(53);
         exit(0);
     }
@@ -214,9 +222,9 @@ int main(int argc, const char *argv[]) {
     pthread_t tid;
     pthread_create(&tid, NULL, &threadproc, NULL);
 
-    // create an event tap to grab keypresses
+    // create an event mask & event tap to grab keypresses
     CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
-    CFMachPortRef eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, eventMask, CGEventCallback, NULL);
+    eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, eventMask, CGEventCallback, NULL);
 
     // exit if unable to create the event tap
     if (!eventTap) {
