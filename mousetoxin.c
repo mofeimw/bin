@@ -22,6 +22,25 @@ char BLACKLIST[] = {
 
 char INPUT[512] = "";
 
+// simulate pressing a key
+void pressKey(int key){
+    // create a HID hardware event source
+    CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+
+    // create keypress events
+    CGEventRef down = CGEventCreateKeyboardEvent(src, (CGKeyCode) key, true);
+    CGEventRef up = CGEventCreateKeyboardEvent(src, (CGKeyCode) key, false);
+
+    // post the keyboard events
+    CGEventPost(kCGHIDEventTap, down);
+    CGEventPost(kCGHIDEventTap, up);
+
+    // release memory
+    CFRelease(down);
+    CFRelease(up);
+    CFRelease (src);
+}
+
 // search ~/.zsh_local
 char *search(char word[]) {
     // get path with $HOME
@@ -75,16 +94,13 @@ char *search(char word[]) {
 }
 
 // toxin launcher
-void launcher() {
+void launcher(CGKeyCode keyCode) {
     // check if the first key is blacklisted
     if (strlen(INPUT) == 1) {
         for (int i = 0; i < strlen(BLACKLIST); i++) {
             if (INPUT[0] == BLACKLIST[i]) {
-                // continue to skhd
-                char buffer[64];
-                snprintf(buffer, sizeof(buffer), "zsh -ic \"skhd -k %c;\"", INPUT[0]);
-                system(buffer);
-
+                pressKey(0);                      // bypass buffer
+                pressKey((int) keyCode); // send original keypress
                 exit(0);
             }
         }
@@ -95,6 +111,7 @@ void launcher() {
     if (alias != NULL) {
         // run the alias if found
         system(strdup(alias));
+        pressKey(53);   // escape
         exit(0);
     }
 }
@@ -129,10 +146,10 @@ const char *fromKeyCode(int keyCode, bool shift, bool caps) {
         case 16:  return shift || caps ? "Y" : "y";
         case 6:   return shift || caps ? "Z" : "z";
 
-        case 49:  return " ";                                      // space
-        case 36:  return "";                                       // enter
-        case 51:  INPUT[strlen(INPUT) - 1] = '\0'; return "";  // backspace
-        case 53:  system("zsh -ic \"skhd -k escape;\""); exit(0); // escape
+        case 49:  return " ";                                     // space
+        case 36:  return "";                                      // enter
+        case 51:  INPUT[strlen(INPUT) - 1] = '\0'; return ""; // backspace
+        case 53:  pressKey(53); pressKey(53); exit(0);           // escape
 
         case 18:  return shift ? "!" : "1";
         case 19:  return shift ? "@" : "2";
@@ -158,7 +175,7 @@ const char *fromKeyCode(int keyCode, bool shift, bool caps) {
         case 50:  return shift ? "~" : "`";
     }
 
-    return ""; // unknown
+    return "";                   // unknown
 }
 
 // called on every Quartz event
@@ -178,7 +195,7 @@ CGEventRef CGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef e
 
     // append to the end of INPUT and attempt to launch
     strcat(INPUT, fromKeyCode(keyCode, shift, caps));
-    launcher();
+    launcher(keyCode);
 
     // prevent keypress from going through
     return NULL;
@@ -189,11 +206,9 @@ void *threadproc(void *arg) {
     while(1)
     {
         sleep(6);
-        system("zsh -ic \"skhd -k escape;\"");
+        pressKey(53);
         exit(0);
     }
-
-    return 0;
 }
 
 int main(int argc, const char *argv[]) {
@@ -203,9 +218,7 @@ int main(int argc, const char *argv[]) {
 
     // create an event tap to grab keypresses
     CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
-    CFMachPortRef eventTap = CGEventTapCreate(
-        kCGSessionEventTap, kCGHeadInsertEventTap, 0, eventMask, CGEventCallback, NULL
-    );
+    CFMachPortRef eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, eventMask, CGEventCallback, NULL);
 
     // exit if unable to create the event tap
     if (!eventTap) {
