@@ -23,13 +23,11 @@ char BLACKLIST[] = {
 char INPUT[512] = "";
 
 // simulate pressing a key
-void pressKey(int key){
-    // create a HID hardware event source
-    CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
-
+void pressKey(int keyCode){
     // create keypress events
-    CGEventRef down = CGEventCreateKeyboardEvent(src, (CGKeyCode) key, true);
-    CGEventRef up = CGEventCreateKeyboardEvent(src, (CGKeyCode) key, false);
+    // using a HID hardware event source
+    CGEventRef down = CGEventCreateKeyboardEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState), (CGKeyCode) keyCode, true);
+    CGEventRef up = CGEventCreateKeyboardEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState), (CGKeyCode) keyCode, false);
 
     // post the keyboard events
     CGEventPost(kCGHIDEventTap, down);
@@ -38,7 +36,6 @@ void pressKey(int key){
     // release memory
     CFRelease(down);
     CFRelease(up);
-    CFRelease (src);
 }
 
 // search ~/.zsh_local
@@ -99,8 +96,8 @@ void launcher(CGKeyCode keyCode) {
     if (strlen(INPUT) == 1) {
         for (int i = 0; i < strlen(BLACKLIST); i++) {
             if (INPUT[0] == BLACKLIST[i]) {
-                pressKey(0);                      // bypass buffer
-                pressKey((int) keyCode); // send original keypress
+                pressKey(0);               // send buffer key
+                pressKey((int) keyCode); // send original key
                 exit(0);
             }
         }
@@ -111,6 +108,7 @@ void launcher(CGKeyCode keyCode) {
     if (alias != NULL) {
         // run the alias if found
         system(strdup(alias));
+        pressKey(0);    // buffer
         pressKey(53);   // escape
         exit(0);
     }
