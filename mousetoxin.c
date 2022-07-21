@@ -22,24 +22,71 @@ char BLACKLIST[] = {
 
 char INPUT[512] = "";
 
+// search ~/.zsh_local
+int search(char word[]) {
+    // get path with $HOME
+    char path[64];
+    strcat(strcpy(path, getenv("HOME")), "/.zsh_local");
+
+    // open file
+    FILE* file;
+    file = fopen(path, "r");
+
+    // exit on error if file doesn't exist
+    if (file == NULL) {
+        fprintf(stderr, "error: ~/.zsh_local does not exist");
+        exit(1);
+    }
+
+    // construct search string for alias
+    char search[256] = "alias ";
+    strcat(search, word);
+    strcat(search, "=");
+
+    char line[64];
+    int found = 0;
+
+    // read file line by line
+    while (fgets(line, 64, file)) {
+        // check if the line contains the search string
+        if(strstr(line, search)) {
+            found = 1;
+        }
+    }
+
+    // close file
+    fclose(file);
+
+    // return 1 for true and 0 for false
+    return found;
+}
+
 // toxin launcher
 void launcher() {
     // check if the first key is blacklisted
     if (strlen(INPUT) == 1) {
         for (int i = 0; i < strlen(BLACKLIST); i++) {
             if (INPUT[0] == BLACKLIST[i]) {
-                // continue to skhd, then suicide
+                // continue to skhd
                 char buffer[64];
-                snprintf(buffer, sizeof(buffer), "zsh -ic \"skhd -k %c;\"; kill %i;", INPUT[0], getpid());
+                snprintf(buffer, sizeof(buffer), "zsh -ic \"skhd -k %c;\"", INPUT[0]);
                 system(buffer);
+
+                exit(0);
             }
         }
     }
 
-    // launch alias if defined in .zsh_local
-    char buffer[192];
-    snprintf(buffer, sizeof(buffer), "[ -n \"$(grep \"alias %s=\" $HOME/.zsh_local)\" ] && { zsh -ic \"skhd -k escape; %s;\"; kill %i; }", INPUT, INPUT, getpid());
-    system(buffer);
+    // search ~/.zsh_local
+    int found = search(INPUT);
+    if (found) {
+        // call zsh alias if found
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "zsh -ic \"skhd -k escape; %s;\"", INPUT);
+        system(buffer);
+
+        exit(0);
+    }
 }
 
 // convert to a human readable keycode
