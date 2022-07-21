@@ -1,6 +1,8 @@
-// a ratpoison inspired minimal hotkey launcher for mofei's personal use on macOS with skhd
-
-// gcc mousetoxin.c -framework ApplicationServices -framework Carbon -o mousetoxin
+// ==================================== mofei =====================================
+// a ratpoison inspired minimal hotkey launcher for personal use on macOS with skhd
+// --------------------------------------------------------------------------------
+//! gcc mousetoxin.c -framework ApplicationServices -framework Carbon -o mousetoxin
+// ================================================================================
 
 #include <stdio.h>
 #include <string.h>
@@ -22,11 +24,11 @@ char INPUT[512] = "";
 
 // toxin launcher
 void launcher() {
-    // check if key is blacklisted
+    // check if the first key is blacklisted
     if (strlen(INPUT) == 1) {
         for (int i = 0; i < strlen(BLACKLIST); i++) {
             if (INPUT[0] == BLACKLIST[i]) {
-                // continue to skhd then suicide
+                // continue to skhd, then suicide
                 char buffer[64];
                 snprintf(buffer, sizeof(buffer), "zsh -ic \"skhd -k %c;\"; kill %i;", INPUT[0], getpid());
                 system(buffer);
@@ -34,14 +36,13 @@ void launcher() {
         }
     }
 
-    // hand over to zsh
-    // run aliases defined in .zsh_local
+    // launch alias if defined in .zsh_local
     char buffer[192];
     snprintf(buffer, sizeof(buffer), "[ -n \"$(grep \"alias %s=\" $HOME/.zsh_local)\" ] && { zsh -ic \"skhd -k escape; %s;\"; kill %i; }", INPUT, INPUT, getpid());
     system(buffer);
 }
 
-// convert to a human readable key code
+// convert to a human readable keycode
 const char *convertKeyCode(int keyCode, bool shift, bool caps) {
     switch ((int) keyCode) {
         case 0:   return shift || caps ? "A" : "a";
@@ -71,10 +72,10 @@ const char *convertKeyCode(int keyCode, bool shift, bool caps) {
         case 16:  return shift || caps ? "Y" : "y";
         case 6:   return shift || caps ? "Z" : "z";
 
-        case 49:  return " ";                                        // space
-        case 36:  return "";                                         // enter
-        case 51:  INPUT[strlen(INPUT) - 1] = '\0'; return "";    // backspace
-        case 53:  system("zsh -ic \"skhd -k escape;\""); return ""; // escape
+        case 49:  return " ";                                      // space
+        case 36:  return "";                                       // enter
+        case 51:  INPUT[strlen(INPUT) - 1] = '\0'; return "";  // backspace
+        case 53:  system("zsh -ic \"skhd -k escape;\""); exit(0); // escape
 
         case 18:  return shift ? "!" : "1";
         case 19:  return shift ? "@" : "2";
@@ -103,36 +104,34 @@ const char *convertKeyCode(int keyCode, bool shift, bool caps) {
     return ""; // unknown
 }
 
-// called on every keypress
+// called on every Quartz event
 CGEventRef CGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
-    // return if not a keydown or flag change
+    // ignore if not a keydown or modifier flag change
     if (type != kCGEventKeyDown && type != kCGEventFlagsChanged) {
         return event;
     }
 
-    // get flags
+    // get flags and keycode
     CGEventFlags flags = CGEventGetFlags(event);
-
-    // get keycode
     CGKeyCode keyCode = (CGKeyCode) CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
-    // get shift/caps flags and launch
-    if (type == kCGEventKeyDown) {
-        bool shift = flags & kCGEventFlagMaskShift;
-        bool caps = flags & kCGEventFlagMaskAlphaShift;
+    // check shifts and caps lock
+    bool shift = flags & kCGEventFlagMaskShift;
+    bool caps = flags & kCGEventFlagMaskAlphaShift;
 
-        strcat(INPUT, convertKeyCode(keyCode, shift, caps));
-        launcher();
-    }
+    // append to the end of INPUT and attempt to launch
+    strcat(INPUT, convertKeyCode(keyCode, shift, caps));
+    launcher();
 
-    return event;
+    // prevent keypress from going through
+    return NULL;
 }
 
-// thread that suicides after 4 seconds
+// thread that suicides after 6 seconds
 void *threadproc(void *arg) {
     while(1)
     {
-        sleep(4);
+        sleep(6);
         system("zsh -ic \"skhd -k escape;\"");
         exit(0);
     }
