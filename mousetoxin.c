@@ -23,13 +23,13 @@ char BLACKLIST[] = {
 char INPUT[512] = "";
 
 // search ~/.zsh_local
-int search(char word[]) {
+char *search(char word[]) {
     // get path with $HOME
     char path[64];
     strcat(strcpy(path, getenv("HOME")), "/.zsh_local");
 
     // open file
-    FILE* file;
+    FILE *file;
     file = fopen(path, "r");
 
     // exit on error if file doesn't exist
@@ -43,22 +43,35 @@ int search(char word[]) {
     strcat(search, word);
     strcat(search, "=");
 
-    char line[64];
-    int found = 0;
+    char line[128];
 
     // read file line by line
-    while (fgets(line, 64, file)) {
-        // check if the line contains the search string
+    while (fgets(line, 128, file)) {
+        // check if line contains search string
         if(strstr(line, search)) {
-            found = 1;
+            char *alias = line;
+
+            // check if the alias declaration uses single/double quotes
+            if ((alias[strlen(search)] == '"') || (alias[strlen(search)] == '\'')) {
+                // remove leading declaration, quotes, and trailing newline
+                alias += strlen(search) + 1;
+                alias[strlen(alias) - 2] = '\0';
+            } else {
+                // remove leading declaration and trailing newline
+                alias += strlen(search);
+                alias[strlen(alias) - 1] = '\0';
+            }
+
+            // return contents of stripped alias declaration
+            return alias;
         }
     }
 
     // close file
     fclose(file);
 
-    // return 1 for true and 0 for false
-    return found;
+    // return NULL if match is not found
+    return NULL;
 }
 
 // toxin launcher
@@ -78,19 +91,16 @@ void launcher() {
     }
 
     // search ~/.zsh_local
-    int found = search(INPUT);
-    if (found) {
-        // call zsh alias if found
-        char buffer[64];
-        snprintf(buffer, sizeof(buffer), "zsh -ic \"skhd -k escape; %s;\"", INPUT);
-        system(buffer);
-
+    char *alias = search(INPUT);
+    if (alias != NULL) {
+        // run the alias if found
+        system(strdup(alias));
         exit(0);
     }
 }
 
 // convert to a human readable keycode
-const char *convertKeyCode(int keyCode, bool shift, bool caps) {
+const char *fromKeyCode(int keyCode, bool shift, bool caps) {
     switch ((int) keyCode) {
         case 0:   return shift || caps ? "A" : "a";
         case 11:  return shift || caps ? "B" : "b";
@@ -167,7 +177,7 @@ CGEventRef CGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef e
     bool caps = flags & kCGEventFlagMaskAlphaShift;
 
     // append to the end of INPUT and attempt to launch
-    strcat(INPUT, convertKeyCode(keyCode, shift, caps));
+    strcat(INPUT, fromKeyCode(keyCode, shift, caps));
     launcher();
 
     // prevent keypress from going through
