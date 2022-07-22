@@ -1,8 +1,8 @@
-// ==================================== mofei =====================================
-// a ratpoison inspired minimal hotkey launcher for personal use on macOS with skhd
-// --------------------------------------------------------------------------------
-//! gcc mousetoxin.c -framework ApplicationServices -framework Carbon -o mousetoxin
-// ================================================================================
+/* ==================================== mofei ===================================== */
+/* a ratpoison inspired minimal hotkey launcher for personal use on macOS with skhd */
+/* -------------------------------------------------------------------------------- */
+/** gcc mousetoxin.c -framework ApplicationServices -framework Carbon -o mousetoxin */
+/* ================================================================================ */
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -15,12 +15,12 @@
 char INPUT[512] = "";
 CFMachPortRef eventTap;
 
-// simulate pressing a key
+/* === simulate pressing a key === */
 void pressKey(int keyCode) {
     // kill the event tap
     CGEventTapEnable(eventTap, false);
 
-    // create keydown and keyup events
+    // create keydown & keyup events
     // using HID hardware event source
     CGEventRef down = CGEventCreateKeyboardEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState), (CGKeyCode) keyCode, true);
     CGEventRef up = CGEventCreateKeyboardEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState), (CGKeyCode) keyCode, false);
@@ -28,13 +28,9 @@ void pressKey(int keyCode) {
     // post the keyboard events
     CGEventPost(kCGHIDEventTap, down);
     CGEventPost(kCGHIDEventTap, up);
-
-    // release memory
-    CFRelease(down);
-    CFRelease(up);
 }
 
-// search ~/.zsh_local
+/* === search ~/.zsh_local === */
 char *search(char *word) {
     // get path with $HOME
     char path[64];
@@ -68,7 +64,7 @@ char *search(char *word) {
                 alias += strlen(search) + 1;
                 alias[strlen(alias) - 2] = '\0';
             } else {
-                // remove leading declaration and trailing newline
+                // remove leading declaration & trailing newline
                 alias += strlen(search);
                 alias[strlen(alias) - 1] = '\0';
             }
@@ -85,42 +81,7 @@ char *search(char *word) {
     return NULL;
 }
 
-// toxin launcher
-void launcher(CGKeyCode keyCode) {
-    // keys used by skhd
-    const char BLACKLIST[] = {
-        'z',    // kitty
-        'f',   // finder
-        'n',    // notes
-        'c',  // firefox
-        'x',  // spotify
-        'v',    // skype
-    };
-
-    // check if the first key is blacklisted
-    if (strlen(INPUT) == 1) {
-        for (int i = 0; i < strlen(BLACKLIST); i++) {
-            if (INPUT[0] == BLACKLIST[i]) {
-                // send the original key
-                pressKey((int) keyCode);
-                exit(0);
-            }
-        }
-    }
-
-    // search ~/.zsh_local
-    char *alias = search(INPUT);
-    if (alias) {
-        // run the alias if found
-        system(strdup(alias));
-
-        // escape & exit
-        pressKey(53);
-        exit(0);
-    }
-}
-
-// convert to a human readable keycode
+/* ====== convert an int keycode to a key character ====== */
 const char *fromKeyCode(int keyCode, bool shift, bool caps) {
     switch (keyCode) {
         case 0:   return shift || caps ? "A" : "a";
@@ -182,30 +143,56 @@ const char *fromKeyCode(int keyCode, bool shift, bool caps) {
     return "";                   // unknown
 }
 
-// called on every Quartz event
+/* =================================== keyboard event handler ==================================== */
 CGEventRef CGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
-    // ignore if not a keydown or modifier flag change
-    if (type != kCGEventKeyDown && type != kCGEventFlagsChanged) {
-        return event;
-    }
-
-    // get flags and keycode
+    // get flags & keycode
     CGEventFlags flags = CGEventGetFlags(event);
     CGKeyCode keyCode = (CGKeyCode) CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
-    // check shifts and caps lock
+    // check shift & caps lock
     bool shift = flags & kCGEventFlagMaskShift;
     bool caps = flags & kCGEventFlagMaskAlphaShift;
 
-    // append to the end of INPUT and attempt to launch
+    // append key to the end of INPUT
     strcat(INPUT, fromKeyCode(keyCode, shift, caps));
-    launcher(keyCode);
+
+    // check if the first key is occupied by skhd
+    if (strlen(INPUT) == 1) {
+        // skhd BLACKLIST
+        const char BLACKLIST[] = {
+            'z',    // kitty
+            'f',   // finder
+            'n',    // notes
+            'c',  // firefox
+            'x',  // spotify
+            'v',    // skype
+        };
+
+        for (int i = 0; i < strlen(BLACKLIST); i++) {
+            if (INPUT[0] == BLACKLIST[i]) {
+                // send the original key
+                pressKey((int) keyCode);
+                exit(0);
+            }
+        }
+    }
+
+    // search ~/.zsh_local
+    char *alias = search(INPUT);
+    if (alias) {
+        // run the alias if found
+        system(strdup(alias));
+
+        // escape & exit
+        pressKey(53);
+        exit(0);
+    }
 
     // prevent keypress from going through
     return NULL;
 }
 
-// thread that suicides after 6 seconds
+/* === 6 second suicide thread === */
 void *suicide() {
     while (1) {
         sleep(6);
@@ -215,11 +202,11 @@ void *suicide() {
 }
 
 int main(int argc, const char *argv[]) {
-    // spawn a new thread to time exit
+    // spawn a new thread to limit lifetime
     pthread_t tid;
     pthread_create(&tid, NULL, suicide, NULL);
 
-    // create an event mask & event tap to grab keypresses
+    // create an event mask & event tap to grab keyboard events
     CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
     eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, eventMask, CGEventCallback, NULL);
 
@@ -230,9 +217,11 @@ int main(int argc, const char *argv[]) {
         exit(1);
     }
 
-    // create a run loop source and add enable the event tap
+    // create a run loop source
     CFRunLoopSourceRef runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0);
     CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopCommonModes);
+
+    // enable the event tap
     CGEventTapEnable(eventTap, true);
 
     // start the loop
