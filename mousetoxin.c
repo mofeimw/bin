@@ -156,26 +156,16 @@ CGEventRef CGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef e
     // append key to the end of INPUT
     strcat(INPUT, fromKeyCode(keyCode, shift, caps));
 
-    // check if the first key is occupied by skhd
+    /* === allow skhd keybinds to pass through === *\
     if (strlen(INPUT) == 1) {
-        // skhd BLACKLIST
-        const char BLACKLIST[] = {
-            'z',    // kitty
-            'f',   // finder
-            'n',    // notes
-            'c',  // firefox
-            'x',  // spotify
-            'v',    // skype
-        };
-
+        const char BLACKLIST[] = { 'z', 'f', 'n', 'x', 'c', 'v' };
         for (int i = 0; i < strlen(BLACKLIST); i++) {
             if (INPUT[0] == BLACKLIST[i]) {
-                // send the original key
                 pressKey((int) keyCode);
                 exit(0);
             }
         }
-    }
+    } */
 
     // search ~/.zsh_local
     char *alias = search(INPUT);
