@@ -5,28 +5,18 @@
 // ================================================================================
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
 
-// keys used by skhd
-char BLACKLIST[] = {
-    'z',    // kitty
-    'f',   // finder
-    'n',    // notes
-    'c',  // firefox
-    'x',  // spotify
-    'v',    // skype
-};
-
+// declare globals
 char INPUT[512] = "";
-
-// define event tap variable
 CFMachPortRef eventTap;
 
 // simulate pressing a key
-void pressKey(int keyCode){
+void pressKey(int keyCode) {
     // kill the event tap
     CGEventTapEnable(eventTap, false);
 
@@ -45,7 +35,7 @@ void pressKey(int keyCode){
 }
 
 // search ~/.zsh_local
-char *search(char word[]) {
+char *search(char *word) {
     // get path with $HOME
     char path[64];
     strcat(strcpy(path, getenv("HOME")), "/.zsh_local");
@@ -54,9 +44,9 @@ char *search(char word[]) {
     FILE *file;
     file = fopen(path, "r");
 
-    // exit on error if file doesn't exist
-    if (file == NULL) {
-        fprintf(stderr, "error: ~/.zsh_local does not exist");
+    // exit on error opening file
+    if (!file) {
+        fprintf(stderr, "[mousetoxin] error opening ~/.zsh_local");
         exit(1);
     }
 
@@ -65,16 +55,15 @@ char *search(char word[]) {
     strcat(search, word);
     strcat(search, "=");
 
-    char line[128];
-
     // read file line by line
+    char line[128];
     while (fgets(line, 128, file)) {
         // check if line contains search string
-        if(strstr(line, search)) {
+        if (strstr(line, search)) {
             char *alias = line;
 
             // check if the alias declaration uses single/double quotes
-            if ((alias[strlen(search)] == '"') || (alias[strlen(search)] == '\'')) {
+            if (alias[strlen(search)] == '"' || alias[strlen(search)] == '\'') {
                 // remove leading declaration, quotes, and trailing newline
                 alias += strlen(search) + 1;
                 alias[strlen(alias) - 2] = '\0';
@@ -98,6 +87,16 @@ char *search(char word[]) {
 
 // toxin launcher
 void launcher(CGKeyCode keyCode) {
+    // keys used by skhd
+    const char BLACKLIST[] = {
+        'z',    // kitty
+        'f',   // finder
+        'n',    // notes
+        'c',  // firefox
+        'x',  // spotify
+        'v',    // skype
+    };
+
     // check if the first key is blacklisted
     if (strlen(INPUT) == 1) {
         for (int i = 0; i < strlen(BLACKLIST); i++) {
@@ -111,7 +110,7 @@ void launcher(CGKeyCode keyCode) {
 
     // search ~/.zsh_local
     char *alias = search(INPUT);
-    if (alias != NULL) {
+    if (alias) {
         // run the alias if found
         system(strdup(alias));
 
@@ -123,7 +122,7 @@ void launcher(CGKeyCode keyCode) {
 
 // convert to a human readable keycode
 const char *fromKeyCode(int keyCode, bool shift, bool caps) {
-    switch ((int) keyCode) {
+    switch (keyCode) {
         case 0:   return shift || caps ? "A" : "a";
         case 11:  return shift || caps ? "B" : "b";
         case 8:   return shift || caps ? "C" : "c";
@@ -207,11 +206,9 @@ CGEventRef CGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef e
 }
 
 // thread that suicides after 6 seconds
-void *threadproc(void *arg) {
-    while(1)
-    {
+void *suicide() {
+    while (1) {
         sleep(6);
-        pressKey(0);
         pressKey(53);
         exit(0);
     }
@@ -220,15 +217,16 @@ void *threadproc(void *arg) {
 int main(int argc, const char *argv[]) {
     // spawn a new thread to time exit
     pthread_t tid;
-    pthread_create(&tid, NULL, &threadproc, NULL);
+    pthread_create(&tid, NULL, suicide, NULL);
 
     // create an event mask & event tap to grab keypresses
     CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
     eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, eventMask, CGEventCallback, NULL);
 
     // exit if unable to create the event tap
+    // permissions missing in system preferences
     if (!eventTap) {
-        fprintf(stderr, "error: unable to create event tap\nplease check permissions\n");
+        fprintf(stderr, "[mousetoxin] unable to create event tap - please check permissions");
         exit(1);
     }
 
@@ -237,7 +235,7 @@ int main(int argc, const char *argv[]) {
     CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopCommonModes);
     CGEventTapEnable(eventTap, true);
 
-    // start the loop.
+    // start the loop
     CFRunLoopRun();
 
     return 0;
