@@ -3,9 +3,6 @@
 # convert markdown to pdf using pandoc
 # autocmd BufwritePost *.md silent !mdpdf %:p
 
-file=${1%"${1##*[!/]}"}
-file=${file##*/}
+pandoc "$1" --pdf-engine="xelatex" -V "geometry:margin=1in" -o "${1%%\.md}.pdf"
 
-pandoc "$1" --pdf-engine=xelatex -V geometry:margin=1in -o "${1%%\.md}".pdf
-
-# while true; do { printf "HTTP/1.0 200 OK\r\nContent-Length: %s\r\n\r\n" "$(wc -c <test.pdf)"; cat test.pdf; } | nc -l 8080 || break; done
+# while true; do { printf "HTTP/1.0 200 OK\r\nContent-Length: %s\r\n\r\n" "$(wc -c < "${1%%\.md}".pdf)"; cat "${1%%\.md}".pdf; } | nc -l 8080 || break; done
