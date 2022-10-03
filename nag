@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+    printf "1 argument required: nagging reminder\n"
+    exit 1
+fi
+
+interval=360
+reminder="$1"
+
+[ -n "$2" ] && interval=$(($2 * 60))
+
+while :; do
+    sleep "$interval"
+    osascript -e "display dialog \"$reminder\" with title \"$reminder\" buttons \"$reminder\"" > /dev/null 2>&1
+done
