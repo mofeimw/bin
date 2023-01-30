@@ -30,20 +30,20 @@ looper() {
     done
 }
 
-# ╭──────────┬──╮
+# ╭─────────────╮
 printf '\033[36m╭'
-looper 11 '─'
-printf '┬───────╮\n'
+looper 3 '─'
+printf '╮\n'
 
 # greeting + date & time
-printf '│ %s' "welcome, mofei"
-looper 35 ' '
+printf '│ %s' "mofei's todo"
+looper 33 ' '
 printf '%s │' "$DATE"
 
-# ├──────────┴──┤
+# ├─────────────┤
 printf '├'
-looper 11 '─'
-printf '┴───────┤'
+looper 3 '─'
+printf '┤'
 
 # todo
 if [ -n "$msg" ]; then
