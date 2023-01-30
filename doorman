@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# personal todo greeter
+# personal todo greeter for my terminal
 
 # get window dimensions
 LINES=$(tput lines)
@@ -16,9 +16,9 @@ DATE=$(date '+%m/%d/%y │ %I:%M')
 # check if file exists and/or is empty
 # and set special message :)
 if [ ! -f "$HOME/todo" ]; then
-    msg="! todo file in ~ not found"
+    msg="! ~/todo not found"
 elif [ ! -s "$HOME/todo" ]; then
-    msg="all caught up!"
+    msg="all caught up! :)"
 fi
 
 # for every columns minus arg1 times, print arg2
