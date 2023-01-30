@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# personal todo greeter
+
+# get window dimensions
+LINES=$(tput lines)
+COLS=$(tput cols)
+
+# get date and time
+DATE=$(date '+%m/%d/%y │ %I:%M')
+
+# exit if not enough space
+[ "$LINES" -lt 16 ] && exit
+[ "$COLS" -lt 44 ] && exit
+
+# check if file exists and/or is empty
+# and set special message :)
+if [ ! -f "$HOME/todo" ]; then
+    msg="! todo file in ~ not found"
+elif [ ! -s "$HOME/todo" ]; then
+    msg="all caught up!"
+fi
+
+# for every columns minus arg1 times, print arg2
+looper() {
+    i="$1"
+    while [ "$i" -le "$COLS" ]; do
+        printf '%s' "$2"
+        i=$((i+1))
+    done
+}
+
+# ╭─────────────╮
+printf '\033[36m╭'
+looper 3 '─'
+printf '╮\n'
+
+# greeting + date & time
+printf '│ %s' "welcome, mofei"
+looper 35 ' '
+printf '%s │' "$DATE"
+
+# ├─────────────┤
+printf '├'
+looper 3 '─'
+printf '┤'
+
+# todo
+if [ -n "$msg" ]; then
+    printf '│ %s' "$msg"
+    looper $((${#msg} + 4)) ' '
+    printf '│\n'
+else
+    while IFS= read -r line; do
+        printf '│ %s' "$line"
+        looper $((${#line} + 4)) ' '
+        printf '│\n'
+    done < "$HOME/todo"
+fi
+
+# ╰─────────────╯
+printf '╰'
+looper 3 '─'
+printf '╯\n\n'
