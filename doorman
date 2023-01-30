@@ -14,11 +14,11 @@ DATE=$(date '+%m/%d/%y │ %I:%M')
 [ "$COLS" -lt 44 ] && exit
 
 # check if file exists and/or is empty
-# and set special message :)
 if [ ! -f "$HOME/todo" ]; then
     msg="! ~/todo not found"
 elif [ ! -s "$HOME/todo" ]; then
-    msg="all caught up! :)"
+    # msg="all caught up! :)"
+    exit 0
 fi
 
 # for every columns minus arg1 times, print arg2
