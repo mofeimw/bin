@@ -61,4 +61,4 @@ fi
 # ╰─────────────╯
 printf '╰'
 looper 3 '─'
-printf '╯\n'
+printf '╯\n\n'
